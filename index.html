@@ -1,55 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
 
   <meta
     name="viewport"
-    content="width=device-width, initial-scale=1.0, user-scalable=no"
-  />
+    content="width=device-width, initial-scale=1.0"
+  >
 
-  <title>Explore the Heart AR</title>
+  <title>Explore the Human Heart</title>
 
-  <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      font-family: Arial, sans-serif;
-    }
+  <link rel="stylesheet" href="./style.css">
 
-    #message {
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10;
-
-      background: rgba(255,255,255,0.9);
-      padding: 10px 18px;
-      border-radius: 20px;
-
-      text-align: center;
-      font-size: 16px;
-    }
-  </style>
+  <script
+    type="module"
+    src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js">
+  </script>
 </head>
 
 <body>
 
-<div id="message">
-  Move your device slowly to find a surface
-</div>
+  <main class="page">
 
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
-  }
-}
-</script>
+    <h1>Explore the Human Heart</h1>
 
-<script type="module" src="./main.js"></script>
+    <p>
+      Rotate, zoom, and explore the heart in 3D or augmented reality.
+    </p>
+
+    <model-viewer
+      src="./models/heart.glb"
+      alt="3D model of the human heart"
+
+      camera-controls
+      touch-action="pan-y"
+
+      auto-rotate
+      autoplay
+
+      shadow-intensity="1"
+
+      ar
+      ar-modes="webxr scene-viewer quick-look"
+
+      ar-scale="auto"
+      environment-image="neutral">
+
+      <button
+        slot="ar-button"
+        class="ar-button">
+        View in AR
+      </button>
+
+    </model-viewer>
+
+  </main>
 
 </body>
+
 </html>

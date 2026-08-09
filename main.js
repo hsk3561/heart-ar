@@ -1,392 +1,69 @@
-import * as THREE from 'three';
+<!DOCTYPE html>
+<html lang="en">
 
-import { ARButton } from
-'three/addons/webxr/ARButton.js';
+<head>
+  <meta charset="UTF-8" />
 
-import { GLTFLoader } from
-'three/addons/loaders/GLTFLoader.js';
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
 
+  <title>Explore the Heart</title>
 
-let camera;
-let scene;
-let renderer;
+  <link rel="stylesheet" href="./style.css" />
 
-let controller;
-let reticle;
+  <script
+    type="module"
+    src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js">
+  </script>
+</head>
 
-let hitTestSource = null;
-let hitTestSourceRequested = false;
+<body>
 
-let heartModel = null;
-let mixer = null;
+  <main class="page">
 
-const clock = new THREE.Clock();
+    <h1>Explore the Human Heart</h1>
 
+    <p>
+      Rotate, zoom, and explore the heart in 3D or augmented reality.
+    </p>
 
-init();
+    <model-viewer
+      src="./models/heart.glb"
 
+      alt="3D model of the human heart"
 
-function init() {
+      camera-controls
 
-    // -----------------------------
-    // SCENE
-    // -----------------------------
+      touch-action="pan-y"
 
-    scene = new THREE.Scene();
+      auto-rotate
 
+      autoplay
 
-    // -----------------------------
-    // CAMERA
-    // -----------------------------
+      animation-crossfade-duration="300"
 
-    camera = new THREE.PerspectiveCamera(
-        70,
-        window.innerWidth / window.innerHeight,
-        0.01,
-        20
-    );
+      shadow-intensity="1"
 
+      ar
 
-    // -----------------------------
-    // LIGHT
-    // -----------------------------
+      ar-modes="webxr scene-viewer quick-look"
 
-    const hemisphereLight =
-        new THREE.HemisphereLight(
-            0xffffff,
-            0xbbbbff,
-            3
-        );
+      ar-scale="auto"
 
-    scene.add(hemisphereLight);
+      environment-image="neutral">
 
+      <button
+        slot="ar-button"
+        class="ar-button">
+        View in AR
+      </button>
 
-    // -----------------------------
-    // RENDERER
-    // -----------------------------
+    </model-viewer>
 
-    renderer =
-        new THREE.WebGLRenderer({
-            antialias: true,
-            alpha: true
-        });
+  </main>
 
-    renderer.setPixelRatio(
-        window.devicePixelRatio
-    );
+</body>
 
-    renderer.setSize(
-        window.innerWidth,
-        window.innerHeight
-    );
-
-    renderer.xr.enabled = true;
-
-    document.body.appendChild(
-        renderer.domElement
-    );
-
-
-    // -----------------------------
-    // AR BUTTON
-    // -----------------------------
-
-    const arButton =
-        ARButton.createButton(
-            renderer,
-            {
-                requiredFeatures: [
-                    'hit-test'
-                ]
-            }
-        );
-
-    document.body.appendChild(arButton);
-
-
-    // -----------------------------
-    // LOAD HEART
-    // -----------------------------
-
-    loadHeart();
-
-
-    // -----------------------------
-    // RETICLE
-    // -----------------------------
-
-    const geometry =
-        new THREE.RingGeometry(
-            0.08,
-            0.10,
-            32
-        );
-
-    geometry.rotateX(
-        -Math.PI / 2
-    );
-
-    const material =
-        new THREE.MeshBasicMaterial();
-
-    reticle =
-        new THREE.Mesh(
-            geometry,
-            material
-        );
-
-    reticle.matrixAutoUpdate = false;
-
-    reticle.visible = false;
-
-    scene.add(reticle);
-
-
-    // -----------------------------
-    // CONTROLLER
-    // -----------------------------
-
-    controller =
-        renderer.xr.getController(0);
-
-    controller.addEventListener(
-        'select',
-        placeHeart
-    );
-
-    scene.add(controller);
-
-
-    // -----------------------------
-    // RESIZE
-    // -----------------------------
-
-    window.addEventListener(
-        'resize',
-        onWindowResize
-    );
-
-
-    renderer.setAnimationLoop(render);
-}
-function loadHeart() {
-
-    const loader =
-        new GLTFLoader();
-
-
-    loader.load(
-
-        './models/heart.glb',
-
-        function (gltf) {
-
-            heartModel =
-                gltf.scene;
-
-
-            // الحجم المبدئي
-            heartModel.scale.set(
-                0.15,
-                0.15,
-                0.15
-            );
-
-
-            // القلب مخفي حتى يحدد الطفل مكانه
-            heartModel.visible = false;
-
-            scene.add(heartModel);
-
-
-            // -------------------------
-            // ANIMATION
-            // -------------------------
-
-            if (
-                gltf.animations &&
-                gltf.animations.length > 0
-            ) {
-
-                mixer =
-                    new THREE.AnimationMixer(
-                        heartModel
-                    );
-
-
-                gltf.animations.forEach(
-                    (clip) => {
-
-                        mixer
-                            .clipAction(clip)
-                            .play();
-
-                    }
-                );
-
-            }
-
-
-            console.log(
-                'Heart loaded successfully'
-            );
-
-            console.log(
-                'Animations:',
-                gltf.animations
-            );
-
-        },
-
-        undefined,
-
-        function (error) {
-
-            console.error(
-                'Error loading heart:',
-                error
-            );
-
-        }
-
-    );
-
-}
-function render(
-    timestamp,
-    frame
-) {
-
-    const delta =
-        clock.getDelta();
-
-
-    // تشغيل نبض القلب
-    if (mixer) {
-
-        mixer.update(delta);
-
-    }
-
-
-    if (frame) {
-
-        const referenceSpace =
-            renderer.xr.getReferenceSpace();
-
-        const session =
-            renderer.xr.getSession();
-
-
-        if (
-            hitTestSourceRequested === false
-        ) {
-
-            session.requestReferenceSpace(
-                'viewer'
-            )
-            .then(
-                function(referenceSpace) {
-
-                    session
-                    .requestHitTestSource({
-                        space:
-                            referenceSpace
-                    })
-                    .then(
-                        function(source) {
-
-                            hitTestSource =
-                                source;
-
-                        }
-                    );
-
-                }
-            );
-
-
-            session.addEventListener(
-                'end',
-                function() {
-
-                    hitTestSourceRequested =
-                        false;
-
-                    hitTestSource =
-                        null;
-
-                }
-            );
-
-
-            hitTestSourceRequested = true;
-
-        }
-
-
-        if (hitTestSource) {
-
-            const hitTestResults =
-                frame.getHitTestResults(
-                    hitTestSource
-                );
-
-
-            if (
-                hitTestResults.length
-            ) {
-
-                const hit =
-                    hitTestResults[0];
-
-
-                reticle.visible =
-                    true;
-
-
-                reticle.matrix.fromArray(
-
-                    hit
-                    .getPose(
-                        referenceSpace
-                    )
-                    .transform
-                    .matrix
-
-                );
-
-            }
-
-            else {
-
-                reticle.visible =
-                    false;
-
-            }
-
-        }
-
-    }
-
-
-    renderer.render(
-        scene,
-        camera
-    );
-
-}
-function onWindowResize() {
-
-    camera.aspect =
-        window.innerWidth /
-        window.innerHeight;
-
-    camera.updateProjectionMatrix();
-
-    renderer.setSize(
-        window.innerWidth,
-        window.innerHeight
-    );
-
-}
+</html>
